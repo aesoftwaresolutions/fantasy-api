@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import pool from '../db/pool';
 import { AppError } from '../lib/AppError';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
@@ -18,12 +18,8 @@ interface League extends RowDataPacket {
 }
 
 function generateInviteCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  // Cryptographically random: invite codes act as access credentials.
+  return randomBytes(4).toString('hex').toUpperCase(); // 8 hex chars
 }
 
 interface CreateLeagueInput {
@@ -132,7 +128,9 @@ export async function joinLeague(userId: string, input: JoinLeagueInput): Promis
 
     // Check membership count vs max_teams
     const [countRows] = await conn.query<any[]>(
-      'SELECT COUNT(*) as cnt FROM league_members WHERE league_id = ?',
+      // Lock the league's membership rows so the capacity check and insert
+      // are atomic against a concurrent join (avoids over-filling a league).
+      'SELECT COUNT(*) as cnt FROM league_members WHERE league_id = ? FOR UPDATE',
       [league.id]
     );
     const memberCount = countRows[0].cnt;

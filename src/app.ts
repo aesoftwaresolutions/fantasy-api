@@ -1,6 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import config from './config/env';
 import { authenticate } from './middleware/auth';
 import { errorHandler, notFound } from './middleware/errorHandler';
 
@@ -19,14 +21,27 @@ import notificationsRouter from './routes/notifications';
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: config.allowedOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
+
+// Limit brute-force attempts against the auth endpoints.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Health check routes (no auth required)
 app.use('/', healthRouter);
 
-// Auth routes (no auth required)
-app.use('/api/auth', authRouter);
+// Auth routes (no auth required, rate limited)
+app.use('/api/auth', authLimiter, authRouter);
 
 // Protected API routes
 app.use('/api/leagues', authenticate, leaguesRouter);

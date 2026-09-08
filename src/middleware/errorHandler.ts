@@ -11,7 +11,13 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
   console.error(err);
 
   const status = err.status || 500;
-  const message = err.message || 'Internal server error';
+
+  // Don't leak internal error details for unexpected 500s in production.
+  const isUnexpected = status >= 500;
+  const message =
+    process.env.NODE_ENV === 'production' && isUnexpected
+      ? 'Internal server error'
+      : err.message || 'Internal server error';
 
   res.status(status).json({
     error: err.error || 'internal_error',

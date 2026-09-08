@@ -21,6 +21,11 @@ const config = {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   PORT: parseInt(process.env.PORT || '3000', 10),
+  nodeEnv: process.env.NODE_ENV || 'development',
+  allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
 };
 
 export default config;

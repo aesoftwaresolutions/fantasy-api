@@ -1,14 +1,9 @@
-import { Router, Response } from 'express';
-import { AuthedRequest } from '../middleware/auth';
+import { Router } from 'express';
+import { isEmail } from 'validator';
+import { asyncHandler } from '../lib/asyncHandler';
 import { registerUser, loginUser } from '../services/authService';
 
 const router = Router();
-
-function asyncHandler(fn: (req: AuthedRequest, res: Response) => Promise<void>) {
-  return (req: AuthedRequest, res: Response, next: any) => {
-    Promise.resolve(fn(req, res)).catch(next);
-  };
-}
 
 router.post(
   '/register',
@@ -19,6 +14,14 @@ router.post(
       res.status(400).json({
         error: 'validation_error',
         message: 'email, password, and display_name are required',
+      });
+      return;
+    }
+
+    if (!isEmail(email)) {
+      res.status(400).json({
+        error: 'validation_error',
+        message: 'A valid email address is required',
       });
       return;
     }
