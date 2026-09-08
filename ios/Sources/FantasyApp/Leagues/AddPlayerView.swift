@@ -1,18 +1,18 @@
 import SwiftUI
 import FantasyKit
 
-// Adds a player to a team's roster by ID. A searchable player browser
-// will replace the ID field once the players endpoint ships (it's a stub
-// on the backend today), so this is deliberately minimal for now.
+// Adds a player to a team's roster: pick a player from the searchable
+// browser, choose a slot, and sign them.
 public struct AddPlayerView: View {
     let teamId: String
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
 
-    @State private var playerId = ""
+    @State private var selectedPlayer: Player?
     @State private var slotType = "bench"
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showBrowser = false
 
     var onSuccess: () -> Void = {}
 
@@ -29,13 +29,13 @@ public struct AddPlayerView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 8) {
                         Eyebrow("Sign a player")
-                        Text("Enter a player ID to add them to your roster.")
+                        Text("Search the player pool and add them to your roster.")
                             .font(.system(size: 15))
                             .foregroundColor(Theme.Palette.chalkDim)
                     }
                     .padding(.top, 4)
 
-                    FieldTextField(title: "Player ID", text: $playerId)
+                    playerSelector
 
                     VStack(alignment: .leading, spacing: 8) {
                         Eyebrow("Slot")
@@ -59,8 +59,8 @@ public struct AddPlayerView: View {
                         }
                     }
                     .buttonStyle(KickoffButtonStyle())
-                    .disabled(isLoading || playerId.isEmpty)
-                    .opacity(playerId.isEmpty ? 0.5 : 1)
+                    .disabled(isLoading || selectedPlayer == nil)
+                    .opacity(selectedPlayer == nil ? 0.5 : 1)
                 }
                 .padding(24)
             }
@@ -75,16 +75,82 @@ public struct AddPlayerView: View {
                     .foregroundColor(Theme.Palette.slate)
             }
         }
+        .sheet(isPresented: $showBrowser) {
+            NavigationStack {
+                PlayerBrowserView { player in
+                    selectedPlayer = player
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
+    }
+
+    @ViewBuilder
+    private var playerSelector: some View {
+        if let player = selectedPlayer {
+            Button {
+                showBrowser = true
+            } label: {
+                HStack(spacing: 12) {
+                    Text(player.position)
+                        .font(.system(size: 12, weight: .heavy))
+                        .foregroundColor(Theme.Palette.fieldNight)
+                        .frame(width: 40, height: 26)
+                        .background(positionTint(player.position))
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(player.fullName)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Theme.Palette.chalk)
+                        if let nfl = player.nflTeam {
+                            Text(nfl)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Theme.Palette.slate)
+                        }
+                    }
+                    Spacer()
+                    Text("Change")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Theme.Palette.endZoneGold)
+                }
+                .padding(14)
+                .background(Theme.Palette.fieldNight2)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                showBrowser = true
+            } label: {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                    Text("Choose a player")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(Theme.Palette.chalk)
+                .padding(14)
+                .background(Theme.Palette.fieldNight2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Theme.Palette.hashLine, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private func add() {
+        guard let player = selectedPlayer else { return }
         isLoading = true
         errorMessage = nil
         Task {
             do {
                 _ = try await appState.api.addPlayer(
                     teamId: teamId,
-                    playerId: playerId.trimmingCharacters(in: .whitespaces),
+                    playerId: player.id,
                     slotType: slotType
                 )
                 await MainActor.run {

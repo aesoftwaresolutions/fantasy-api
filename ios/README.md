@@ -51,7 +51,8 @@ Alternatively, set it dynamically before initializing the app state.
 - **JoinLeagueView** — Join an existing league via invite code
 - **LeagueDetailView** — View league info and browse teams within a league; each team links to its roster
 - **TeamRosterView** — A team's roster grouped into starters, bench, and injured reserve, with position-coded chips and drop-player controls
-- **AddPlayerView** — Add a player to a roster by ID and slot (a searchable player browser will replace the ID field once the players endpoint ships)
+- **PlayerBrowserView** — Searchable, position-filterable player picker backed by the players endpoint, with debounced search
+- **AddPlayerView** — Pick a player from the browser, choose a slot, and add them to the roster
 
 ## Design
 

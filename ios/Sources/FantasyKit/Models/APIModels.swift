@@ -66,6 +66,20 @@ public struct SlotResponse: Codable {
     }
 }
 
+public struct PlayersResponse: Codable {
+    public let players: [Player]
+    public let total: Int
+    public let limit: Int
+    public let offset: Int
+
+    public init(players: [Player], total: Int, limit: Int, offset: Int) {
+        self.players = players
+        self.total = total
+        self.limit = limit
+        self.offset = offset
+    }
+}
+
 public struct APIErrorResponse: Codable {
     public let error: String
     public let message: String

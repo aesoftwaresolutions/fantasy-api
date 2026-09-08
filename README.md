@@ -116,8 +116,26 @@ The server will listen on `http://localhost:3000` by default.
   - Body: `{ player_id, slot_type?, roster_position? }`
 - `DELETE /api/teams/:id/roster/:playerId` — Drop a player (owner only)
 
+### Players (Auth Required: Bearer Token)
+- `GET /api/players` — Search and list players
+  - Query: `search` (name substring), `position` (e.g. `QB`), `limit` (1–100, default 50), `offset` (default 0)
+  - Response: `{ players, total, limit, offset }`
+- `GET /api/players/:id` — Get one player
+- `POST /api/players` — Add a player (admin/manual)
+  - Body: `{ external_provider_id, full_name, position, nfl_team?, status?, photo_url? }`
+
+Seed the player pool with real NFL players from the free
+[nflverse](https://github.com/nflverse/nflverse-data) dataset (CC-BY-4.0):
+
+```bash
+npm run seed:players
+```
+
+This downloads `players.csv` (~24,800 players) and upserts it into the
+`players` table (re-runnable). A licensed real-time stats provider can replace
+this later without schema changes.
+
 ### Stubbed Resources (Auth Required: Bearer Token) — return HTTP 501
-- `GET /api/players` — List players
 - `GET /api/rosters` — (roster access is via `/api/teams/:id/roster`)
 - `GET /api/drafts` — List drafts
 - `GET /api/trades` — List trades
@@ -149,11 +167,11 @@ Stubbed endpoints return HTTP 501 with:
 - ✅ Leagues: create / join by invite / list / get / update / delete (with commissioner + membership authorization)
 - ✅ Teams: get / update, plus per-league team listing
 - ✅ Rosters: list / add / drop (owner-authorized) via `/api/teams/:id/roster`
+- ✅ Players: search/filter/paginate, get, create; nflverse seed script (`npm run seed:players`)
 
-> Note: the league/team/roster paths are verified for build, routing, auth, and validation. The database-backed success paths (inserts, joins, transactions) require a running MySQL instance to exercise end-to-end.
+> Note: the league/team/roster/player paths are verified for build, routing, auth, and validation. The database-backed success paths (inserts, joins, transactions, the seed import) require a running MySQL instance to exercise end-to-end.
 
 ### Stubbed (HTTP 501 Not Implemented)
-- Players CRUD
 - Drafts CRUD
 - Trades CRUD
 - Waivers CRUD

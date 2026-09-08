@@ -58,6 +58,28 @@ public final class APIClient {
         _ = try await perform(path: path, method: method, bodyData: bodyData, authorized: authorized)
     }
 
+    // GET request whose path carries query items.
+    private func requestWithQuery<T: Decodable>(
+        path: String,
+        queryItems: [URLQueryItem],
+        authorized: Bool
+    ) async throws -> T {
+        let base = baseURL.appendingPathComponent(path)
+        guard var components = URLComponents(url: base, resolvingAgainstBaseURL: false) else {
+            throw APIError.invalidResponse
+        }
+        components.queryItems = queryItems
+        guard let url = components.url else {
+            throw APIError.invalidResponse
+        }
+        let data = try await performURL(url: url, method: "GET", bodyData: nil, authorized: authorized)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw APIError.decoding(error)
+        }
+    }
+
     // Build, send, and validate a request; returns the raw (possibly empty) body.
     private func perform(
         path: String,
@@ -66,6 +88,15 @@ public final class APIClient {
         authorized: Bool
     ) async throws -> Data {
         let url = baseURL.appendingPathComponent(path)
+        return try await performURL(url: url, method: method, bodyData: bodyData, authorized: authorized)
+    }
+
+    private func performURL(
+        url: URL,
+        method: String,
+        bodyData: Data?,
+        authorized: Bool
+    ) async throws -> Data {
         var request = URLRequest(url: url)
         request.httpMethod = method
 
@@ -223,5 +254,24 @@ public final class APIClient {
             bodyData: nil,
             authorized: true
         )
+    }
+
+    public func players(
+        search: String? = nil,
+        position: String? = nil,
+        limit: Int = 50,
+        offset: Int = 0
+    ) async throws -> PlayersResponse {
+        var items: [URLQueryItem] = [
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "offset", value: String(offset))
+        ]
+        if let search, !search.isEmpty {
+            items.append(URLQueryItem(name: "search", value: search))
+        }
+        if let position, !position.isEmpty {
+            items.append(URLQueryItem(name: "position", value: position))
+        }
+        return try await requestWithQuery(path: "api/players", queryItems: items, authorized: true)
     }
 }
