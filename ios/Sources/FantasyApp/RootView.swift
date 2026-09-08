@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct RootView: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
 
     public init() {}
 

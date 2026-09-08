@@ -3,7 +3,7 @@ import FantasyKit
 
 public struct LeagueDetailView: View {
     let league: League
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var teams: [Team] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -116,25 +116,33 @@ public struct LeagueDetailView: View {
     }
 
     private func teamRow(_ team: Team, seed: Int) -> some View {
-        HStack(spacing: 14) {
-            Text(String(format: "%02d", seed))
-                .font(Theme.Fonts.score(16))
-                .foregroundColor(Theme.Palette.turf)
-                .frame(width: 30, alignment: .leading)
-            Text(team.teamName)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(Theme.Palette.chalk)
-            Spacer()
-            if let cap = team.capSpaceRemaining {
-                Text("$\(cap)")
-                    .font(Theme.Fonts.score(13))
-                    .foregroundColor(Theme.Palette.chalkDim)
+        NavigationLink {
+            TeamRosterView(team: team)
+        } label: {
+            HStack(spacing: 14) {
+                Text(String(format: "%02d", seed))
+                    .font(Theme.Fonts.score(16))
+                    .foregroundColor(Theme.Palette.turf)
+                    .frame(width: 30, alignment: .leading)
+                Text(team.teamName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Theme.Palette.chalk)
+                Spacer()
+                if let cap = team.capSpaceRemaining {
+                    Text("$\(cap)")
+                        .font(Theme.Fonts.score(13))
+                        .foregroundColor(Theme.Palette.chalkDim)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Theme.Palette.slate)
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .background(Theme.Palette.fieldNight2)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .background(Theme.Palette.fieldNight2)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .buttonStyle(.plain)
     }
 
     private func loadTeams() async {
@@ -164,7 +172,7 @@ public struct LeagueDetailView: View {
                 createdAt: "2026-01-01"
             )
         )
-        .environmentObject(AppState())
+        .environment(AppState())
     }
     .preferredColorScheme(.dark)
 }

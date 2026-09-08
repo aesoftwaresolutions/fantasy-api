@@ -2,7 +2,7 @@ import SwiftUI
 import FantasyKit
 
 public struct LeaguesListView: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var leagues: [League] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -184,6 +184,6 @@ func formatLabel(_ format: String) -> String {
 
 #Preview {
     LeaguesListView()
-        .environmentObject(AppState())
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }

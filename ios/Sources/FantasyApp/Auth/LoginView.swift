@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct LoginView: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var email = ""
     @State private var password = ""
     @State private var isLoading = false
@@ -99,6 +99,6 @@ public struct LoginView: View {
 
 #Preview {
     LoginView()
-        .environmentObject(AppState())
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }

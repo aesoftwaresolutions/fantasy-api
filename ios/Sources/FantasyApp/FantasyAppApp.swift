@@ -2,12 +2,14 @@ import SwiftUI
 
 @main
 public struct FantasyAppApp: App {
-    @StateObject private var appState = AppState()
+    @State private var appState = AppState()
+
+    public init() {}
 
     public var body: some Scene {
         WindowGroup {
             RootView()
-                .environmentObject(appState)
+                .environment(appState)
         }
     }
 }

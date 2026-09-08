@@ -2,7 +2,7 @@ import SwiftUI
 import FantasyKit
 
 public struct CreateLeagueView: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var seasonYear = Calendar.current.component(.year, from: Date())
@@ -148,6 +148,6 @@ public struct CreateLeagueView: View {
 
 #Preview {
     NavigationStack { CreateLeagueView() }
-        .environmentObject(AppState())
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }

@@ -42,6 +42,30 @@ public struct TeamsResponse: Codable {
     }
 }
 
+public struct TeamResponse: Codable {
+    public let team: Team
+
+    public init(team: Team) {
+        self.team = team
+    }
+}
+
+public struct RosterResponse: Codable {
+    public let roster: [RosterSlot]
+
+    public init(roster: [RosterSlot]) {
+        self.roster = roster
+    }
+}
+
+public struct SlotResponse: Codable {
+    public let slot: RosterSlot
+
+    public init(slot: RosterSlot) {
+        self.slot = slot
+    }
+}
+
 public struct APIErrorResponse: Codable {
     public let error: String
     public let message: String

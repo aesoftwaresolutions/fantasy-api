@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct RegisterView: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var password = ""
@@ -115,7 +115,7 @@ public struct RegisterView: View {
 #Preview {
     NavigationStack {
         RegisterView()
-            .environmentObject(AppState())
+            .environment(AppState())
     }
     .preferredColorScheme(.dark)
 }

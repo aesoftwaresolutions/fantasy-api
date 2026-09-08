@@ -2,7 +2,7 @@ import SwiftUI
 import FantasyKit
 
 public struct JoinLeagueView: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var inviteCode = ""
     @State private var teamName = ""
@@ -104,6 +104,6 @@ public struct JoinLeagueView: View {
 
 #Preview {
     NavigationStack { JoinLeagueView() }
-        .environmentObject(AppState())
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }

@@ -1,22 +1,25 @@
 import Foundation
-import SwiftUI
+import Observation
 import FantasyKit
 
+@Observable
 @MainActor
-public final class AppState: ObservableObject {
-    @Published public var currentUser: User?
-    @Published public var isAuthenticated: Bool = false
+public final class AppState {
+    public var currentUser: User?
+    public var isAuthenticated: Bool = false
 
-    public let tokenStore: TokenStore
-    public let api: APIClient
+    // Not observed by views — infrastructure, not UI state.
+    @ObservationIgnored public let tokenStore: TokenStore
+    @ObservationIgnored public let api: APIClient
 
     public init() {
-        self.tokenStore = TokenStore()
-        self.api = APIClient { [weak self] in
-            self?.tokenStore.read()
-        }
+        let store = TokenStore()
+        self.tokenStore = store
+        self.api = APIClient { store.read() }
 
-        if let _ = tokenStore.read() {
+        // No /me endpoint yet, so on relaunch we trust a stored token for
+        // session state; currentUser stays nil until the next login.
+        if store.read() != nil {
             isAuthenticated = true
         }
     }

@@ -40,6 +40,31 @@ public final class APIClient {
         bodyData: Data?,
         authorized: Bool
     ) async throws -> T {
+        let data = try await perform(path: path, method: method, bodyData: bodyData, authorized: authorized)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw APIError.decoding(error)
+        }
+    }
+
+    // Perform a request that returns no body (e.g. 204 No Content).
+    private func sendNoContent(
+        path: String,
+        method: String,
+        bodyData: Data?,
+        authorized: Bool
+    ) async throws {
+        _ = try await perform(path: path, method: method, bodyData: bodyData, authorized: authorized)
+    }
+
+    // Build, send, and validate a request; returns the raw (possibly empty) body.
+    private func perform(
+        path: String,
+        method: String,
+        bodyData: Data?,
+        authorized: Bool
+    ) async throws -> Data {
         let url = baseURL.appendingPathComponent(path)
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -80,12 +105,7 @@ public final class APIClient {
             }
         }
 
-        let decoder = JSONDecoder()
-        do {
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw APIError.decoding(error)
-        }
+        return data
     }
 
     public func login(email: String, password: String) async throws -> AuthResponse {
@@ -163,5 +183,45 @@ public final class APIClient {
     public func leagueTeams(leagueId: String) async throws -> [Team] {
         let response: TeamsResponse = try await request(path: "api/leagues/\(leagueId)/teams", method: "GET", authorized: true)
         return response.teams
+    }
+
+    public func getTeam(teamId: String) async throws -> Team {
+        let response: TeamResponse = try await request(path: "api/teams/\(teamId)", method: "GET", authorized: true)
+        return response.team
+    }
+
+    public func roster(teamId: String) async throws -> [RosterSlot] {
+        let response: RosterResponse = try await request(path: "api/teams/\(teamId)/roster", method: "GET", authorized: true)
+        return response.roster
+    }
+
+    public func addPlayer(
+        teamId: String,
+        playerId: String,
+        slotType: String? = nil,
+        rosterPosition: String? = nil
+    ) async throws -> RosterSlot {
+        struct AddPlayerBody: Encodable {
+            let player_id: String
+            let slot_type: String?
+            let roster_position: String?
+        }
+        let body = AddPlayerBody(player_id: playerId, slot_type: slotType, roster_position: rosterPosition)
+        let response: SlotResponse = try await request(
+            path: "api/teams/\(teamId)/roster",
+            method: "POST",
+            body: body,
+            authorized: true
+        )
+        return response.slot
+    }
+
+    public func dropPlayer(teamId: String, playerId: String) async throws {
+        try await sendNoContent(
+            path: "api/teams/\(teamId)/roster/\(playerId)",
+            method: "DELETE",
+            bodyData: nil,
+            authorized: true
+        )
     }
 }

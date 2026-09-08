@@ -5,7 +5,7 @@ This is the native iOS SwiftUI client for the Fantasy API. It provides screens f
 ## Requirements
 
 - Xcode 15 or later
-- iOS 16 or later deployment target
+- iOS 17 or later deployment target (uses the `@Observable` macro)
 - macOS (required for building and running in the simulator)
 - Swift 5.9+
 
@@ -49,7 +49,9 @@ Alternatively, set it dynamically before initializing the app state.
 - **LeaguesListView** — Browse user's leagues with pull-to-refresh and buttons to create or join a league
 - **CreateLeagueView** — Form to create a new league with name, season year, format, privacy, and team settings
 - **JoinLeagueView** — Join an existing league via invite code
-- **LeagueDetailView** — View league info and browse teams within a league
+- **LeagueDetailView** — View league info and browse teams within a league; each team links to its roster
+- **TeamRosterView** — A team's roster grouped into starters, bench, and injured reserve, with position-coded chips and drop-player controls
+- **AddPlayerView** — Add a player to a roster by ID and slot (a searchable player browser will replace the ID field once the players endpoint ships)
 
 ## Design
 
@@ -78,7 +80,7 @@ theme is designed around. To restyle, change the tokens in `Theme.swift` in one 
 - **APIConfig** — Configurable API base URL
 
 ### FantasyApp (SwiftUI Views)
-- **AppState** — Central `@MainActor` observable state for authentication and API access
+- **AppState** — Central `@Observable @MainActor` state for authentication and API access. Injected with `.environment(_:)` and read via `@Environment(AppState.self)` — the modern iOS 17+ replacement for `ObservableObject`/`@EnvironmentObject`.
 - **RootView** — Conditional rendering of LoginView or LeaguesListView based on auth state
 - **Auth Views** — LoginView and RegisterView with loading and error handling
 - **League Views** — LeaguesListView, CreateLeagueView, JoinLeagueView, LeagueDetailView
