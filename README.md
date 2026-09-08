@@ -10,6 +10,8 @@ This is a skeleton implementation of a fantasy sports management platform suppor
 **Formats:** Redraft and Dynasty (Contract Dynasty fields included for future use)  
 **Database:** MySQL 8.0+
 
+The native iOS client (SwiftUI) lives in [`ios/`](ios/) — see [ios/README.md](ios/README.md).
+
 ## Stack
 
 - **Runtime:** Node.js 18+
