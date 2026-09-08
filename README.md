@@ -213,11 +213,33 @@ The database includes the following tables:
 - `npm run start` — Start the production server
 - `npm run dev` — Start with ts-node-dev (auto-reload)
 - `npm run migrate` — Run database migrations
+- `npm run seed:players` — Seed the player pool from nflverse
 - `npm run typecheck` — Check types without building
+- `npm test` — Run the test suite (Vitest)
+
+## Validation
+
+Request bodies are validated with [Zod](https://zod.dev) schemas at the route
+layer (`src/schemas/`), via a small `validate()` helper that throws a 400
+`{ error: 'validation_error', message }`. Zod strips unknown keys, so only the
+declared fields reach the service layer. Note: `POST /api/auth/register` now
+requires a password of at least 8 characters.
+
+## Testing
+
+Integration tests use **Vitest + Supertest** against the Express app with the
+MySQL pool **mocked** (`vi.mock('../src/db/pool')`), so they run anywhere —
+locally and in CI — without a database. They cover the auth and league request
+→ route → service contract: validation, auth guards, status codes, error
+mapping, and that `password_hash` never appears in a response. Run `npm test`.
+
+> These tests exercise the app logic against a mocked pool; they do not test
+> against a real MySQL instance. Running the app end-to-end still requires a
+> live database.
 
 ## Notes
 
-- This is a skeleton implementation. All SQL uses parameterized queries to prevent injection.
+- All SQL uses parameterized queries to prevent injection.
 - Password hashes are never returned in API responses.
 - Contract-dynasty fields in the database are present but not yet integrated into application logic.
 - All async route handlers wrap errors through a centralized error handler.
