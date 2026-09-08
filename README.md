@@ -95,18 +95,35 @@ The server will listen on `http://localhost:3000` by default.
   - Body: `{ email, password }`
   - Response: `{ token, user }`
 
-### Protected Resources (Auth Required: Bearer Token)
-- `GET /api/leagues` — List leagues [STUBBED]
-- `GET /api/teams` — List teams [STUBBED]
-- `GET /api/players` — List players [STUBBED]
-- `GET /api/rosters` — List rosters [STUBBED]
-- `GET /api/drafts` — List drafts [STUBBED]
-- `GET /api/trades` — List trades [STUBBED]
-- `GET /api/waivers` — List waiver claims [STUBBED]
-- `GET /api/matchups` — List matchups [STUBBED]
-- `GET /api/notifications` — List notifications [STUBBED]
+### Leagues (Auth Required: Bearer Token)
+- `POST /api/leagues` — Create a league (creator becomes commissioner, gets a team)
+  - Body: `{ name, season_year, format?, privacy?, max_teams?, team_name? }`
+- `POST /api/leagues/join` — Join a league by invite code
+  - Body: `{ invite_code, team_name? }`
+- `GET /api/leagues` — List leagues the current user belongs to
+- `GET /api/leagues/:id` — Get a league (members only)
+- `GET /api/leagues/:id/teams` — List teams in a league (members only)
+- `PATCH /api/leagues/:id` — Update a league (commissioner only; name, max_teams, privacy, scoring_rules_json)
+- `DELETE /api/leagues/:id` — Delete a league (commissioner only)
 
-All protected resource endpoints currently return HTTP 501 with:
+### Teams & Rosters (Auth Required: Bearer Token)
+- `GET /api/teams/:id` — Get a team (league members only)
+- `PATCH /api/teams/:id` — Update a team (owner only; team_name, logo_url)
+- `GET /api/teams/:id/roster` — List a team's roster with player details (league members only)
+- `POST /api/teams/:id/roster` — Add a player to the roster (owner only)
+  - Body: `{ player_id, slot_type?, roster_position? }`
+- `DELETE /api/teams/:id/roster/:playerId` — Drop a player (owner only)
+
+### Stubbed Resources (Auth Required: Bearer Token) — return HTTP 501
+- `GET /api/players` — List players
+- `GET /api/rosters` — (roster access is via `/api/teams/:id/roster`)
+- `GET /api/drafts` — List drafts
+- `GET /api/trades` — List trades
+- `GET /api/waivers` — List waiver claims
+- `GET /api/matchups` — List matchups
+- `GET /api/notifications` — List notifications
+
+Stubbed endpoints return HTTP 501 with:
 ```json
 {
   "error": "not_implemented",
@@ -127,12 +144,14 @@ All protected resource endpoints currently return HTTP 501 with:
 - ✅ JWT authentication middleware
 - ✅ Central error handling
 - ✅ CORS and Helmet security middleware
+- ✅ Leagues: create / join by invite / list / get / update / delete (with commissioner + membership authorization)
+- ✅ Teams: get / update, plus per-league team listing
+- ✅ Rosters: list / add / drop (owner-authorized) via `/api/teams/:id/roster`
+
+> Note: the league/team/roster paths are verified for build, routing, auth, and validation. The database-backed success paths (inserts, joins, transactions) require a running MySQL instance to exercise end-to-end.
 
 ### Stubbed (HTTP 501 Not Implemented)
-- Leagues CRUD
-- Teams CRUD
 - Players CRUD
-- Rosters CRUD
 - Drafts CRUD
 - Trades CRUD
 - Waivers CRUD
