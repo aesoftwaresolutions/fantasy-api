@@ -68,6 +68,14 @@ All visual tokens and shared components live in `Sources/FantasyApp/Design/Theme
 - **Chip, Eyebrow, DisplayText, YardLine** — reusable labels and the field-chalk divider.
 - **FieldTextField, KickoffButtonStyle, ErrorBanner, FieldBackground** — themed inputs,
   the primary action button, the error banner, and the field-glow background.
+- **PlayerHeadshot** — circular player photo (real headshots via `AsyncImage`) with a
+  skeleton while loading and a position-tinted fallback disc when there's no photo.
+- **SkeletonRows** — shimmering placeholder rows shown while a list first loads, instead
+  of a bare spinner.
+- **glassSurface** — Liquid Glass (iOS 26 `glassEffect`) for surfaces that float over
+  scrolling content, with a `.ultraThinMaterial` fallback on iOS 17–25.
+- **Theme.Motion** (shared springs) and **Haptics** (light tap / success) drive
+  consistent animation and tactile feedback across the app.
 
 The app renders in dark mode (`RootView` sets `.preferredColorScheme(.dark)`), which the
 theme is designed around. To restyle, change the tokens in `Theme.swift` in one place.

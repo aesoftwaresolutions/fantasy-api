@@ -37,6 +37,42 @@ enum Theme {
         static let cardPadding: CGFloat = 16
         static let spine: CGFloat = 4
     }
+
+    // MARK: Motion — one spring for the whole app so movement feels consistent.
+    enum Motion {
+        static let spring = Animation.spring(response: 0.42, dampingFraction: 0.82)
+        static let snappy = Animation.spring(response: 0.3, dampingFraction: 0.9)
+    }
+}
+
+// MARK: - Liquid Glass surface (iOS 26) with a material fallback for iOS 17–25.
+// Used for surfaces that float over scrolling content (toolbars, floating bars).
+// Glass cannot sample other glass, so wrap grouped glass in GlassEffectContainer.
+extension View {
+    @ViewBuilder
+    func glassSurface(cornerRadius: CGFloat = Theme.Metric.corner) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            self
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        }
+    }
+}
+
+// MARK: - Light haptic tap, used to confirm discrete actions (copy, add).
+enum Haptics {
+    static func tap() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+    }
+    static func success() {
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
 }
 
 // MARK: - Color from hex (supports optional alpha in the low byte via 0xRRGGBBAA)
@@ -192,10 +228,125 @@ struct KickoffButtonStyle: ButtonStyle {
                 )
             )
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .shadow(color: Theme.Palette.turf.opacity(configuration.isPressed ? 0.15 : 0.35), radius: configuration.isPressed ? 4 : 12, y: configuration.isPressed ? 2 : 6)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(Theme.Motion.snappy, value: configuration.isPressed)
     }
+}
+
+// Position color coding — a quick visual read of the roster, like a depth chart.
+func positionTint(_ position: String?) -> Color {
+    switch position {
+    case "QB": return Theme.Palette.endZoneGold
+    case "RB": return Theme.Palette.turfBright
+    case "WR": return Color(hex: 0x4FA3E3)
+    case "TE": return Color(hex: 0xB98CE0)
+    case "K": return Theme.Palette.slate
+    case "DEF": return Color(hex: 0xE07B4F)
+    default: return Theme.Palette.slate
+    }
+}
+
+// MARK: - Player headshot with skeleton loading and a position-colored fallback
+struct PlayerHeadshot: View {
+    let url: String?
+    let position: String
+    var size: CGFloat = 44
+
+    var body: some View {
+        Group {
+            if let url, let imageURL = URL(string: url) {
+                AsyncImage(url: imageURL, transaction: Transaction(animation: Theme.Motion.spring)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    case .empty:
+                        placeholder.overlay(ProgressView().tint(Theme.Palette.slate).scaleEffect(0.6))
+                    case .failure:
+                        fallback
+                    @unknown default:
+                        fallback
+                    }
+                }
+            } else {
+                fallback
+            }
+        }
+        .frame(width: size, height: size)
+        .background(Theme.Palette.fieldNight)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(positionTint(position).opacity(0.6), lineWidth: 2))
+    }
+
+    private var placeholder: some View {
+        Circle().fill(Theme.Palette.fieldNight2)
+    }
+
+    // Initials on a position-tinted disc when there's no photo.
+    private var fallback: some View {
+        ZStack {
+            Circle().fill(positionTint(position).opacity(0.22))
+            Image(systemName: "person.fill")
+                .font(.system(size: size * 0.4))
+                .foregroundColor(positionTint(position))
+        }
+    }
+}
+
+// MARK: - Skeleton placeholder rows for list loading states
+struct SkeletonRows: View {
+    var count: Int = 6
+    var body: some View {
+        VStack(spacing: 8) {
+            ForEach(0..<count, id: \.self) { _ in
+                HStack(spacing: 12) {
+                    Circle().fill(Theme.Palette.fieldNight2).frame(width: 40, height: 40)
+                    VStack(alignment: .leading, spacing: 6) {
+                        RoundedRectangle(cornerRadius: 4).fill(Theme.Palette.fieldNight2).frame(width: 140, height: 12)
+                        RoundedRectangle(cornerRadius: 4).fill(Theme.Palette.fieldNight2).frame(width: 70, height: 10)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
+                .background(Theme.Palette.fieldNight2.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+        }
+        .shimmering()
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Shimmer effect for skeletons
+struct Shimmer: ViewModifier {
+    @State private var phase: CGFloat = -1
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [.clear, Color.white.opacity(0.12), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * 0.6)
+                    .offset(x: geo.size.width * phase)
+                }
+                .allowsHitTesting(false)
+            )
+            .mask(content)
+            .onAppear {
+                withAnimation(.linear(duration: 1.3).repeatForever(autoreverses: false)) {
+                    phase = 1.6
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmering() -> some View { modifier(Shimmer()) }
 }
 
 // MARK: - An inline error banner in the interface's own voice

@@ -63,6 +63,8 @@ public struct PlayerBrowserView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
+        .background(Theme.Palette.fieldNight.opacity(0.6))
+        .glassSurface(cornerRadius: 0)
     }
 
     private func filterChip(title: String, active: Bool, tint: Color = Theme.Palette.turf, action: @escaping () -> Void) -> some View {
@@ -83,9 +85,10 @@ public struct PlayerBrowserView: View {
     @ViewBuilder
     private var content: some View {
         if isLoading && players.isEmpty {
-            Spacer()
-            ProgressView().tint(Theme.Palette.chalk)
-            Spacer()
+            ScrollView {
+                SkeletonRows(count: 8)
+                    .padding(16)
+            }
         } else if let errorMessage, players.isEmpty {
             Spacer()
             ErrorBanner(message: errorMessage).padding(16)
@@ -101,6 +104,7 @@ public struct PlayerBrowserView: View {
                 LazyVStack(spacing: 8) {
                     ForEach(players) { player in
                         Button {
+                            Haptics.tap()
                             onSelect(player)
                             dismiss()
                         } label: {
@@ -116,12 +120,7 @@ public struct PlayerBrowserView: View {
 
     private func playerRow(_ player: Player) -> some View {
         HStack(spacing: 12) {
-            Text(player.position)
-                .font(.system(size: 12, weight: .heavy))
-                .foregroundColor(Theme.Palette.fieldNight)
-                .frame(width: 40, height: 26)
-                .background(positionTint(player.position))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            PlayerHeadshot(url: player.photoUrl, position: player.position, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(player.fullName)
                     .font(.system(size: 16, weight: .semibold))
@@ -169,7 +168,9 @@ public struct PlayerBrowserView: View {
                 limit: 50,
                 offset: 0
             )
-            players = response.players
+            withAnimation(Theme.Motion.spring) {
+                players = response.players
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

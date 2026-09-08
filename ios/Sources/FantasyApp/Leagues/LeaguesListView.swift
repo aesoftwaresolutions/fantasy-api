@@ -66,7 +66,10 @@ public struct LeaguesListView: View {
     @ViewBuilder
     private var content: some View {
         if isLoading && leagues.isEmpty {
-            ProgressView().tint(Theme.Palette.chalk)
+            ScrollView {
+                SkeletonRows(count: 5)
+                    .padding(16)
+            }
         } else if leagues.isEmpty {
             emptyState
         } else {
@@ -123,7 +126,10 @@ public struct LeaguesListView: View {
         isLoading = true
         errorMessage = nil
         do {
-            leagues = try await appState.api.listLeagues()
+            let fetched = try await appState.api.listLeagues()
+            withAnimation(Theme.Motion.spring) {
+                leagues = fetched
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
@@ -162,6 +168,7 @@ struct LeagueCard: View {
                 }
             }
         }
+        .shadow(color: Color.black.opacity(0.25), radius: 8, y: 4)
     }
 }
 

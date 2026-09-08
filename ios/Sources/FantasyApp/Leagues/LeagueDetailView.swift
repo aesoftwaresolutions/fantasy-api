@@ -65,9 +65,10 @@ public struct LeagueDetailView: View {
                 Spacer()
                 Button {
                     UIPasteboard.general.string = code
-                    withAnimation { copied = true }
+                    Haptics.success()
+                    withAnimation(Theme.Motion.snappy) { copied = true }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        withAnimation { copied = false }
+                        withAnimation(Theme.Motion.snappy) { copied = false }
                     }
                 } label: {
                     HStack(spacing: 6) {

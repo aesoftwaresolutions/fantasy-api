@@ -31,10 +31,7 @@ public struct TeamRosterView: View {
                     header
 
                     if isLoading && slots.isEmpty {
-                        ProgressView()
-                            .tint(Theme.Palette.chalk)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 40)
+                        SkeletonRows(count: 6)
                     } else if let errorMessage, slots.isEmpty {
                         ErrorBanner(message: errorMessage)
                     } else if slots.isEmpty {
@@ -119,12 +116,7 @@ public struct TeamRosterView: View {
 
     private func playerRow(_ slot: RosterSlot) -> some View {
         HStack(spacing: 12) {
-            Text(slot.position ?? "—")
-                .font(.system(size: 12, weight: .heavy))
-                .foregroundColor(Theme.Palette.fieldNight)
-                .frame(width: 40, height: 26)
-                .background(positionTint(slot.position))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            PlayerHeadshot(url: nil, position: slot.position ?? "", size: 40)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(slot.fullName ?? "Unknown player")
@@ -159,6 +151,7 @@ public struct TeamRosterView: View {
         .padding(.horizontal, 14)
         .background(Theme.Palette.fieldNight2)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .transition(.opacity.combined(with: .move(edge: .trailing)))
     }
 
     private var emptyState: some View {
@@ -201,23 +194,12 @@ public struct TeamRosterView: View {
         defer { pendingDropId = nil }
         do {
             try await appState.api.dropPlayer(teamId: team.id, playerId: slot.playerId)
-            slots.removeAll { $0.id == slot.id }
+            withAnimation(Theme.Motion.spring) {
+                slots.removeAll { $0.id == slot.id }
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-    }
-}
-
-// Position color coding — a quick visual read of the roster, like a depth chart.
-func positionTint(_ position: String?) -> Color {
-    switch position {
-    case "QB": return Theme.Palette.endZoneGold
-    case "RB": return Theme.Palette.turfBright
-    case "WR": return Color(hex: 0x4FA3E3)
-    case "TE": return Color(hex: 0xB98CE0)
-    case "K": return Theme.Palette.slate
-    case "DEF": return Color(hex: 0xE07B4F)
-    default: return Theme.Palette.slate
     }
 }
 
