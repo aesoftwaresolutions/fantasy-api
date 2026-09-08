@@ -6,65 +6,78 @@ public struct RegisterView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var displayName = ""
-    @State private var birthDate: Date?
+    @State private var birthDate = Date()
     @State private var includeBirthDate = false
     @State private var isLoading = false
     @State private var errorMessage: String?
 
+    public init() {}
+
     public var body: some View {
-        Form {
-            Section(header: Text("Account Information")) {
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .autocapitalization(.none)
-                    .keyboardType(.emailAddress)
+        ZStack {
+            FieldBackground()
 
-                SecureField("Password", text: $password)
-
-                TextField("Display Name", text: $displayName)
-                    .textContentType(.name)
-            }
-
-            Section(header: Text("Optional")) {
-                Toggle("Add Birth Date", isOn: $includeBirthDate)
-
-                if includeBirthDate {
-                    DatePicker(
-                        "Birth Date",
-                        selection: Binding(
-                            get: { birthDate ?? Date() },
-                            set: { birthDate = $0 }
-                        ),
-                        displayedComponents: .date
-                    )
-                }
-            }
-
-            if let errorMessage = errorMessage {
-                Section {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-            }
-
-            Section {
-                Button(action: register) {
-                    if isLoading {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("Creating Account...")
-                        }
-                    } else {
-                        Text("Create Account")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Eyebrow("Sign up")
+                        DisplayText("Create your\nfranchise", size: 32)
+                            .fixedSize(horizontal: false, vertical: true)
+                        YardLine().padding(.top, 4)
                     }
+                    .padding(.top, 12)
+
+                    VStack(spacing: 16) {
+                        FieldTextField(title: "Manager name", text: $displayName, autocap: .words)
+                        FieldTextField(title: "Email", text: $email, keyboard: .emailAddress)
+                        FieldTextField(title: "Password", text: $password, isSecure: true)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle(isOn: $includeBirthDate) {
+                            Text("Add birth date")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Theme.Palette.chalkDim)
+                        }
+                        .tint(Theme.Palette.turf)
+
+                        if includeBirthDate {
+                            DatePicker(
+                                "",
+                                selection: $birthDate,
+                                displayedComponents: .date
+                            )
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
+                            .tint(Theme.Palette.endZoneGold)
+                        }
+                    }
+                    .padding(14)
+                    .background(Theme.Palette.fieldNight2)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    if let errorMessage {
+                        ErrorBanner(message: errorMessage)
+                    }
+
+                    Button(action: register) {
+                        if isLoading {
+                            ProgressView().tint(Theme.Palette.chalk)
+                        } else {
+                            Text("Join the league")
+                        }
+                    }
+                    .buttonStyle(KickoffButtonStyle())
+                    .disabled(isLoading || email.isEmpty || password.isEmpty || displayName.isEmpty)
+                    .opacity(email.isEmpty || password.isEmpty || displayName.isEmpty ? 0.5 : 1)
                 }
-                .disabled(isLoading || email.isEmpty || password.isEmpty || displayName.isEmpty)
+                .padding(24)
             }
         }
-        .navigationTitle("Create Account")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.Palette.fieldNight, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 
     private func register() {
@@ -72,10 +85,10 @@ public struct RegisterView: View {
         errorMessage = nil
 
         let birthDateString: String?
-        if includeBirthDate, let date = birthDate {
+        if includeBirthDate {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
-            birthDateString = formatter.string(from: date)
+            birthDateString = formatter.string(from: birthDate)
         } else {
             birthDateString = nil
         }
@@ -88,9 +101,7 @@ public struct RegisterView: View {
                     displayName: displayName,
                     birthDate: birthDateString
                 )
-                await MainActor.run {
-                    dismiss()
-                }
+                await MainActor.run { dismiss() }
             } catch {
                 await MainActor.run {
                     errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -106,4 +117,5 @@ public struct RegisterView: View {
         RegisterView()
             .environmentObject(AppState())
     }
+    .preferredColorScheme(.dark)
 }

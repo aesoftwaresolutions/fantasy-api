@@ -6,51 +6,78 @@ public struct LoginView: View {
     @State private var password = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var showRegister = false
+
+    public init() {}
 
     public var body: some View {
         NavigationStack {
-            Form {
-                Section(header: Text("Credentials")) {
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .autocapitalization(.none)
-                        .keyboardType(.emailAddress)
+            ZStack {
+                FieldBackground()
 
-                    SecureField("Password", text: $password)
-                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 28) {
+                        hero
 
-                if let errorMessage = errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                    }
-                }
-
-                Section {
-                    Button(action: login) {
-                        if isLoading {
-                            HStack {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text("Logging in...")
-                            }
-                        } else {
-                            Text("Log In")
+                        VStack(spacing: 16) {
+                            FieldTextField(
+                                title: "Email",
+                                text: $email,
+                                keyboard: .emailAddress
+                            )
+                            FieldTextField(
+                                title: "Password",
+                                text: $password,
+                                isSecure: true
+                            )
                         }
-                    }
-                    .disabled(isLoading || email.isEmpty || password.isEmpty)
-                }
 
-                Section {
-                    NavigationLink("Create Account") {
-                        RegisterView()
+                        if let errorMessage {
+                            ErrorBanner(message: errorMessage)
+                        }
+
+                        Button(action: login) {
+                            if isLoading {
+                                ProgressView().tint(Theme.Palette.chalk)
+                            } else {
+                                Text("Take the field")
+                            }
+                        }
+                        .buttonStyle(KickoffButtonStyle())
+                        .disabled(isLoading || email.isEmpty || password.isEmpty)
+                        .opacity(email.isEmpty || password.isEmpty ? 0.5 : 1)
+
+                        HStack(spacing: 6) {
+                            Text("New here?")
+                                .foregroundColor(Theme.Palette.slate)
+                            NavigationLink("Create your franchise") {
+                                RegisterView()
+                            }
+                            .foregroundColor(Theme.Palette.endZoneGold)
+                            .fontWeight(.semibold)
+                        }
+                        .font(.system(size: 14))
+                        .frame(maxWidth: .infinity)
                     }
+                    .padding(24)
                 }
             }
-            .navigationTitle("Fantasy League")
+            .toolbar(.hidden, for: .navigationBar)
         }
+    }
+
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Eyebrow("Fantasy Football")
+            DisplayText("Run your\nleague.", size: 40)
+                .fixedSize(horizontal: false, vertical: true)
+            YardLine()
+                .padding(.top, 4)
+            Text("Draft, trade, and settle it on the field.")
+                .font(.system(size: 15))
+                .foregroundColor(Theme.Palette.chalkDim)
+        }
+        .padding(.top, 40)
+        .padding(.bottom, 8)
     }
 
     private func login() {
@@ -73,4 +100,5 @@ public struct LoginView: View {
 #Preview {
     LoginView()
         .environmentObject(AppState())
+        .preferredColorScheme(.dark)
 }

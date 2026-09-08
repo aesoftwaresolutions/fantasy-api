@@ -7,145 +7,145 @@ public struct LeagueDetailView: View {
     @State private var teams: [Team] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var hasLoadedTeams = false
+    @State private var copied = false
+
+    public init(league: League) {
+        self.league = league
+    }
 
     public var body: some View {
         ZStack {
+            FieldBackground()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    header
+                    if let code = league.inviteCode {
+                        inviteCard(code)
+                    }
+                    teamsSection
+                }
+                .padding(16)
+            }
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.Palette.fieldNight, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .task { await loadTeams() }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Eyebrow("Season \(String(league.seasonYear))")
+            Text(league.name)
+                .font(.system(size: 30, weight: .heavy))
+                .foregroundColor(Theme.Palette.chalk)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                Chip(text: formatLabel(league.format), tint: formatTint(league.format))
+                Chip(text: league.privacy, tint: Theme.Palette.slate)
+                Chip(text: "\(league.maxTeams) teams", tint: Theme.Palette.turf)
+            }
+            YardLine().padding(.top, 2)
+        }
+    }
+
+    private func inviteCard(_ code: String) -> some View {
+        FieldCard(spineColor: Theme.Palette.endZoneGold) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Eyebrow("Invite Code")
+                    Text(code)
+                        .font(Theme.Fonts.score(24))
+                        .foregroundColor(Theme.Palette.endZoneGold)
+                        .tracking(2)
+                        .textSelection(.enabled)
+                }
+                Spacer()
+                Button {
+                    UIPasteboard.general.string = code
+                    withAnimation { copied = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        withAnimation { copied = false }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                        Text(copied ? "Copied" : "Copy")
+                    }
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Theme.Palette.fieldNight)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(Theme.Palette.endZoneGold)
+                    .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    private var teamsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Eyebrow("Teams")
+                Spacer()
+                Text("\(teams.count)/\(league.maxTeams)")
+                    .font(Theme.Fonts.score(14))
+                    .foregroundColor(Theme.Palette.slate)
+            }
+
             if isLoading {
                 ProgressView()
+                    .tint(Theme.Palette.chalk)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+            } else if let errorMessage {
+                ErrorBanner(message: errorMessage)
+            } else if teams.isEmpty {
+                Text("No teams have joined yet. Share the invite code to fill the league.")
+                    .font(.system(size: 14))
+                    .foregroundColor(Theme.Palette.slate)
+                    .padding(.vertical, 8)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(league.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                DetailRow(label: "Season", value: String(league.seasonYear))
-                                DetailRow(label: "Format", value: league.format)
-                                DetailRow(label: "Privacy", value: league.privacy)
-                                DetailRow(label: "Max Teams", value: String(league.maxTeams))
-                                if let inviteCode = league.inviteCode {
-                                    HStack {
-                                        Text("Invite Code")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        Spacer()
-                                        HStack(spacing: 8) {
-                                            Text(inviteCode)
-                                                .font(.caption)
-                                                .fontWeight(.semibold)
-                                                .textSelection(.enabled)
-                                            Button(action: { UIPasteboard.general.string = inviteCode }) {
-                                                Image(systemName: "doc.on.doc")
-                                                    .font(.caption)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .font(.caption)
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Teams (\(teams.count))")
-                                .font(.headline)
-
-                            if teams.isEmpty {
-                                Text("No teams yet")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            } else {
-                                ForEach(teams) { team in
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(team.teamName)
-                                            .font(.subheadline)
-                                            .fontWeight(.semibold)
-                                        if let capSpace = team.capSpaceRemaining {
-                                            Text("Cap Space: \(capSpace)")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(8)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(6)
-                                }
-                            }
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding()
+                ForEach(Array(teams.enumerated()), id: \.element.id) { index, team in
+                    teamRow(team, seed: index + 1)
                 }
             }
+        }
+    }
 
-            if let errorMessage = errorMessage {
-                VStack {
-                    HStack {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundColor(.red)
-                        Text(errorMessage)
-                            .font(.caption)
-                    }
-                    .padding()
-                    .background(Color.red.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding()
-
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+    private func teamRow(_ team: Team, seed: Int) -> some View {
+        HStack(spacing: 14) {
+            Text(String(format: "%02d", seed))
+                .font(Theme.Fonts.score(16))
+                .foregroundColor(Theme.Palette.turf)
+                .frame(width: 30, alignment: .leading)
+            Text(team.teamName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(Theme.Palette.chalk)
+            Spacer()
+            if let cap = team.capSpaceRemaining {
+                Text("$\(cap)")
+                    .font(Theme.Fonts.score(13))
+                    .foregroundColor(Theme.Palette.chalkDim)
             }
         }
-        .navigationTitle("League Details")
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            if !hasLoadedTeams {
-                await loadTeams()
-                hasLoadedTeams = true
-            }
-        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(Theme.Palette.fieldNight2)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func loadTeams() async {
-        await MainActor.run {
-            isLoading = true
-            errorMessage = nil
-        }
-
+        isLoading = true
+        errorMessage = nil
         do {
-            let fetchedTeams = try await appState.api.leagueTeams(leagueId: league.id)
-            await MainActor.run {
-                self.teams = fetchedTeams
-                isLoading = false
-            }
+            teams = try await appState.api.leagueTeams(leagueId: league.id)
         } catch {
-            await MainActor.run {
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                isLoading = false
-            }
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-    }
-}
-
-private struct DetailRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value)
-                .fontWeight(.semibold)
-        }
+        isLoading = false
     }
 }
 
@@ -154,16 +154,17 @@ private struct DetailRow: View {
         LeagueDetailView(
             league: League(
                 id: "1",
-                name: "Example League",
+                name: "Sunday Night Rivals",
                 commissionerId: "user1",
-                format: "redraft",
+                format: "dynasty",
                 privacy: "private",
-                inviteCode: "ABC123",
+                inviteCode: "GRIDIRON",
                 maxTeams: 12,
-                seasonYear: 2024,
-                createdAt: "2024-01-01"
+                seasonYear: 2026,
+                createdAt: "2026-01-01"
             )
         )
         .environmentObject(AppState())
     }
+    .preferredColorScheme(.dark)
 }

@@ -10,54 +10,84 @@ public struct JoinLeagueView: View {
     @State private var errorMessage: String?
     var onSuccess: () -> Void = {}
 
+    public init(onSuccess: @escaping () -> Void = {}) {
+        self.onSuccess = onSuccess
+    }
+
     public var body: some View {
-        Form {
-            Section(header: Text("Join a League")) {
-                TextField("Invite Code", text: $inviteCode)
-                    .autocapitalization(.allCharacters)
-                    .textContentType(.none)
+        ZStack {
+            FieldBackground()
 
-                TextField("Your Team Name (optional)", text: $teamName)
-            }
-
-            if let errorMessage = errorMessage {
-                Section {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-            }
-
-            Section {
-                Button(action: join) {
-                    if isLoading {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("Joining...")
-                        }
-                    } else {
-                        Text("Join League")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Eyebrow("Have a code?")
+                        Text("Enter your league's invite code to claim a team.")
+                            .font(.system(size: 15))
+                            .foregroundColor(Theme.Palette.chalkDim)
                     }
+                    .padding(.top, 4)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Eyebrow("Invite code")
+                        TextField("", text: $inviteCode)
+                            .font(Theme.Fonts.score(22))
+                            .tracking(3)
+                            .foregroundColor(Theme.Palette.endZoneGold)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .tint(Theme.Palette.endZoneGold)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 14)
+                            .background(Theme.Palette.fieldNight)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(Theme.Palette.hashLine, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+
+                    FieldTextField(title: "Your team name (optional)", text: $teamName, autocap: .words)
+
+                    if let errorMessage {
+                        ErrorBanner(message: errorMessage)
+                    }
+
+                    Button(action: join) {
+                        if isLoading {
+                            ProgressView().tint(Theme.Palette.chalk)
+                        } else {
+                            Text("Claim your team")
+                        }
+                    }
+                    .buttonStyle(KickoffButtonStyle())
+                    .disabled(isLoading || inviteCode.isEmpty)
+                    .opacity(inviteCode.isEmpty ? 0.5 : 1)
                 }
-                .disabled(isLoading || inviteCode.isEmpty)
+                .padding(24)
             }
         }
         .navigationTitle("Join League")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.Palette.fieldNight, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }
+                    .foregroundColor(Theme.Palette.slate)
+            }
+        }
     }
 
     private func join() {
         isLoading = true
         errorMessage = nil
-
         Task {
             do {
                 _ = try await appState.api.joinLeague(
-                    inviteCode: inviteCode,
+                    inviteCode: inviteCode.trimmingCharacters(in: .whitespaces),
                     teamName: teamName.isEmpty ? nil : teamName
                 )
-
                 await MainActor.run {
                     onSuccess()
                     dismiss()
@@ -73,8 +103,7 @@ public struct JoinLeagueView: View {
 }
 
 #Preview {
-    NavigationStack {
-        JoinLeagueView()
-            .environmentObject(AppState())
-    }
+    NavigationStack { JoinLeagueView() }
+        .environmentObject(AppState())
+        .preferredColorScheme(.dark)
 }

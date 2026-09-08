@@ -46,10 +46,28 @@ Alternatively, set it dynamically before initializing the app state.
 - **RegisterView** — Email, password, display name, and optional birth date registration
 
 ### Leagues
-- **LeaguesListView** — Browse user's leagues with pull-to-refresh, search filters, and buttons to create or join a league
+- **LeaguesListView** — Browse user's leagues with pull-to-refresh and buttons to create or join a league
 - **CreateLeagueView** — Form to create a new league with name, season year, format, privacy, and team settings
 - **JoinLeagueView** — Join an existing league via invite code
 - **LeagueDetailView** — View league info and browse teams within a league
+
+## Design
+
+The UI follows a single visual system, **"Chalk & Turf,"** drawn from the world of
+fantasy football — a field-night dark theme with turf-green primary, end-zone-gold
+accent, chalk-white lettering, and scoreboard-style monospaced numerals.
+
+All visual tokens and shared components live in `Sources/FantasyApp/Design/Theme.swift`:
+
+- **Palette / Fonts / Metric** — the color, type, and spacing tokens every screen uses.
+- **FieldCard** — the signature element: a card with a jersey-stripe spine whose color
+  encodes the league format (green = redraft, gold = dynasty, red = contract dynasty).
+- **Chip, Eyebrow, DisplayText, YardLine** — reusable labels and the field-chalk divider.
+- **FieldTextField, KickoffButtonStyle, ErrorBanner, FieldBackground** — themed inputs,
+  the primary action button, the error banner, and the field-glow background.
+
+The app renders in dark mode (`RootView` sets `.preferredColorScheme(.dark)`), which the
+theme is designed around. To restyle, change the tokens in `Theme.swift` in one place.
 
 ## Architecture
 
