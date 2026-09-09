@@ -90,6 +90,21 @@ public struct APIErrorResponse: Codable {
     }
 }
 
+public struct MatchupsResponse: Codable {
+    public let matchups: [Matchup]
+    public init(matchups: [Matchup]) { self.matchups = matchups }
+}
+
+public struct MatchupResponse: Codable {
+    public let matchup: Matchup
+    public init(matchup: Matchup) { self.matchup = matchup }
+}
+
+public struct StandingsResponse: Codable {
+    public let standings: [Standing]
+    public init(standings: [Standing]) { self.standings = standings }
+}
+
 public enum APIError: Error, LocalizedError {
     case server(status: Int, code: String, message: String)
     case decoding(Error)

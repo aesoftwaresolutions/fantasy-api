@@ -9,6 +9,7 @@ import {
 } from '../schemas/leagueSchemas';
 import * as leagueService from '../services/leagueService';
 import { listLeagueTeams } from '../services/teamService';
+import { getStandings } from '../services/matchupService';
 
 const router = Router();
 
@@ -51,6 +52,14 @@ router.get(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const teams = await listLeagueTeams(req.user!.id, req.params.id);
     res.status(200).json({ teams });
+  })
+);
+
+router.get(
+  '/:id/standings',
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const standings = await getStandings(req.user!.id, req.params.id);
+    res.status(200).json({ standings });
   })
 );
 

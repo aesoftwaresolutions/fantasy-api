@@ -274,4 +274,26 @@ public final class APIClient {
         }
         return try await requestWithQuery(path: "api/players", queryItems: items, authorized: true)
     }
+
+    public func matchups(leagueId: String, week: Int? = nil) async throws -> [Matchup] {
+        var items = [URLQueryItem(name: "league_id", value: leagueId)]
+        if let week {
+            items.append(URLQueryItem(name: "week", value: String(week)))
+        }
+        let response: MatchupsResponse = try await requestWithQuery(
+            path: "api/matchups",
+            queryItems: items,
+            authorized: true
+        )
+        return response.matchups
+    }
+
+    public func standings(leagueId: String) async throws -> [Standing] {
+        let response: StandingsResponse = try await request(
+            path: "api/leagues/\(leagueId)/standings",
+            method: "GET",
+            authorized: true
+        )
+        return response.standings
+    }
 }

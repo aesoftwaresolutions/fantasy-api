@@ -44,17 +44,9 @@ Copy `.env.example` to `.env` and set your database and JWT credentials:
 cp .env.example .env
 ```
 
-Edit `.env`:
-```
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=fantasy_app
-JWT_SECRET=your-very-secret-key-change-this
-JWT_EXPIRES_IN=7d
-PORT=3000
-```
+Edit `.env` (see `.env.example` for all keys). Generate a strong secret with
+`openssl rand -hex 64`, and set `ALLOWED_ORIGINS` for CORS in non-local
+environments.
 
 ### 3. Run Database Migration
 
@@ -135,12 +127,19 @@ This downloads `players.csv` (~24,800 players) and upserts it into the
 `players` table (re-runnable). A licensed real-time stats provider can replace
 this later without schema changes.
 
+### Matchups & Standings (Auth Required: Bearer Token)
+- `GET /api/matchups?league_id=&week=` — List a league's matchups (members only; `week` optional)
+- `POST /api/matchups` — Create a matchup (commissioner only)
+  - Body: `{ league_id, week_number, team_a_id, team_b_id }`
+- `PATCH /api/matchups/:id` — Set scores / status (commissioner only)
+  - Body: `{ league_id, team_a_score?, team_b_score?, status? }`
+- `GET /api/leagues/:id/standings` — Season standings computed from final matchups (members only)
+
 ### Stubbed Resources (Auth Required: Bearer Token) — return HTTP 501
 - `GET /api/rosters` — (roster access is via `/api/teams/:id/roster`)
 - `GET /api/drafts` — List drafts
 - `GET /api/trades` — List trades
 - `GET /api/waivers` — List waiver claims
-- `GET /api/matchups` — List matchups
 - `GET /api/notifications` — List notifications
 
 Stubbed endpoints return HTTP 501 with:
@@ -168,6 +167,7 @@ Stubbed endpoints return HTTP 501 with:
 - ✅ Teams: get / update, plus per-league team listing
 - ✅ Rosters: list / add / drop (owner-authorized) via `/api/teams/:id/roster`
 - ✅ Players: search/filter/paginate, get, create; nflverse seed script (`npm run seed:players`)
+- ✅ Matchups: list (per league, optional week), create + set scores (commissioner); standings computed from final matchups (`GET /api/leagues/:id/standings`)
 
 > Note: the league/team/roster/player paths are verified for build, routing, auth, and validation. The database-backed success paths (inserts, joins, transactions, the seed import) require a running MySQL instance to exercise end-to-end.
 
@@ -175,7 +175,6 @@ Stubbed endpoints return HTTP 501 with:
 - Drafts CRUD
 - Trades CRUD
 - Waivers CRUD
-- Matchups CRUD
 - Notifications CRUD
 
 ## Authentication

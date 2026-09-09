@@ -37,10 +37,6 @@ public struct LeaguesListView: View {
                         } label: {
                             Label("Join with a code", systemImage: "person.badge.plus")
                         }
-                        Divider()
-                        Button(role: .destructive, action: appState.logout) {
-                            Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
                     } label: {
                         Image(systemName: "ellipsis.circle.fill")
                             .foregroundColor(Theme.Palette.endZoneGold)

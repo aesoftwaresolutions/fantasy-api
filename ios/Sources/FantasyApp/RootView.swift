@@ -8,7 +8,7 @@ public struct RootView: View {
     public var body: some View {
         Group {
             if appState.isAuthenticated {
-                LeaguesListView()
+                MainTabView()
             } else {
                 LoginView()
             }

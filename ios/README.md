@@ -41,6 +41,10 @@ Alternatively, set it dynamically before initializing the app state.
 
 ## Screens Included
 
+### Navigation
+- **MainTabView** — Bottom-tab shell (Leagues / Scores / Profile), the way Sleeper
+  organizes its app. Shown after sign-in via `RootView`.
+
 ### Authentication
 - **LoginView** — Email + password login with error handling and a link to register
 - **RegisterView** — Email, password, display name, and optional birth date registration
@@ -53,6 +57,15 @@ Alternatively, set it dynamically before initializing the app state.
 - **TeamRosterView** — A team's roster grouped into starters, bench, and injured reserve, with position-coded chips and drop-player controls
 - **PlayerBrowserView** — Searchable, position-filterable player picker backed by the players endpoint, with debounced search
 - **AddPlayerView** — Pick a player from the browser, choose a slot, and add them to the roster
+
+### Scores
+- **ScoresView** — Pick a league, then toggle between Matchups and Standings
+- **MatchupsView** — Head-to-head matchup cards grouped by week; the leader is
+  highlighted, with Final / Live status badges
+- **StandingsView** — Ranked standings table (record + points for), top seeds highlighted
+
+### Profile
+- **ProfileView** — Signed-in user info and sign out
 
 ## Design
 
