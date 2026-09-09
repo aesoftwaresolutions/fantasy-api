@@ -135,9 +135,20 @@ this later without schema changes.
   - Body: `{ league_id, team_a_score?, team_b_score?, status? }`
 - `GET /api/leagues/:id/standings` — Season standings computed from final matchups (members only)
 
+### Drafts — snake (Auth Required: Bearer Token)
+- `POST /api/drafts` — Create a draft (commissioner only)
+  - Body: `{ league_id, draft_type?, scheduled_at? }` — only `snake` is supported yet
+- `POST /api/drafts/:id/start` — Generate the serpentine pick order and open the draft (commissioner only)
+  - Body: `{ league_id, rounds? }` (default 15)
+- `GET /api/drafts/:id?league_id=` — Draft state: the draft, all picks (with team/player names), and who's on the clock (members only)
+- `POST /api/drafts/:id/pick` — Make the current pick; enforces turn order, adds the player to the team's roster (team owner or commissioner)
+  - Body: `{ league_id, player_id }`
+
+> Auction drafts and a real-time (WebSocket) draft room are planned next; the
+> snake engine here is REST/polling and fully covered by tests.
+
 ### Stubbed Resources (Auth Required: Bearer Token) — return HTTP 501
 - `GET /api/rosters` — (roster access is via `/api/teams/:id/roster`)
-- `GET /api/drafts` — List drafts
 - `GET /api/trades` — List trades
 - `GET /api/waivers` — List waiver claims
 - `GET /api/notifications` — List notifications
@@ -168,11 +179,11 @@ Stubbed endpoints return HTTP 501 with:
 - ✅ Rosters: list / add / drop (owner-authorized) via `/api/teams/:id/roster`
 - ✅ Players: search/filter/paginate, get, create; nflverse seed script (`npm run seed:players`)
 - ✅ Matchups: list (per league, optional week), create + set scores (commissioner); standings computed from final matchups (`GET /api/leagues/:id/standings`)
+- ✅ Drafts (snake): create, start (serpentine order generation), state + on-the-clock, make pick (turn-enforced, adds to roster). Auction + WebSocket live room planned next.
 
 > Note: the league/team/roster/player paths are verified for build, routing, auth, and validation. The database-backed success paths (inserts, joins, transactions, the seed import) require a running MySQL instance to exercise end-to-end.
 
 ### Stubbed (HTTP 501 Not Implemented)
-- Drafts CRUD
 - Trades CRUD
 - Waivers CRUD
 - Notifications CRUD

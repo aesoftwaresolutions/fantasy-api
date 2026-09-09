@@ -1,25 +1,81 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import { AuthedRequest } from '../middleware/auth';
+import { asyncHandler } from '../lib/asyncHandler';
+import { validate } from '../lib/validate';
+import {
+  createDraftSchema,
+  startDraftSchema,
+  makePickSchema,
+} from '../schemas/draftSchemas';
+import * as draftService from '../services/draftService';
 
 const router = Router();
 
-router.get('/', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'not_implemented', message: 'drafts endpoints not yet implemented' });
-});
+router.post(
+  '/',
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const leagueId = req.body.league_id as string;
+    if (!leagueId) {
+      res.status(400).json({ error: 'validation_error', message: 'league_id is required' });
+      return;
+    }
 
-router.get('/:id', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'not_implemented', message: 'drafts endpoints not yet implemented' });
-});
+    const input = validate(createDraftSchema, req.body);
 
-router.post('/', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'not_implemented', message: 'drafts endpoints not yet implemented' });
-});
+    const draft = await draftService.createDraft(req.user!.id, leagueId, input);
+    res.status(201).json({ draft });
+  })
+);
 
-router.put('/:id', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'not_implemented', message: 'drafts endpoints not yet implemented' });
-});
+router.post(
+  '/:id/start',
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const leagueId = req.body.league_id as string;
+    if (!leagueId) {
+      res.status(400).json({ error: 'validation_error', message: 'league_id is required' });
+      return;
+    }
 
-router.delete('/:id', (req: Request, res: Response) => {
-  res.status(501).json({ error: 'not_implemented', message: 'drafts endpoints not yet implemented' });
-});
+    const input = validate(startDraftSchema, req.body);
+
+    const draft = await draftService.startDraft(
+      req.user!.id,
+      leagueId,
+      req.params.id,
+      input.rounds ?? 15
+    );
+    res.status(200).json({ draft });
+  })
+);
+
+router.get(
+  '/:id',
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const leagueId = req.query.league_id as string;
+    if (!leagueId) {
+      res.status(400).json({ error: 'validation_error', message: 'league_id query parameter is required' });
+      return;
+    }
+
+    const state = await draftService.getDraftState(req.user!.id, leagueId, req.params.id);
+    res.status(200).json(state);
+  })
+);
+
+router.post(
+  '/:id/pick',
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const leagueId = req.body.league_id as string;
+    if (!leagueId) {
+      res.status(400).json({ error: 'validation_error', message: 'league_id is required' });
+      return;
+    }
+
+    const { player_id } = validate(makePickSchema, req.body);
+
+    const pick = await draftService.makePick(req.user!.id, leagueId, req.params.id, player_id);
+    res.status(201).json({ pick });
+  })
+);
 
 export default router;
